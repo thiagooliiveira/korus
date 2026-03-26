@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
+import { createClient } from '@supabase/supabase-js';
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
@@ -28,10 +28,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-const db = new Database("korus.db");
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
-// Initialize Database
-db.exec(`
+// Initialize Database - Note: Tables should be created in Supabase dashboard
+// For now, assuming tables exist
   CREATE TABLE IF NOT EXISTS agencies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
