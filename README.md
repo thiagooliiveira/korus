@@ -1,2 +1,2 @@
 # korus
-korus github
+Korus Studio - Visa Management System

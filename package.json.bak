@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@google/genai": "^1.44.0",
+    "lucide-react": "^0.577.0",
+    "motion": "^12.36.0"
+  }
+}

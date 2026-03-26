@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --bg-main: #09090b;
+  --bg-card: #18181b;
+  --bg-input: #27272a;
+  --text-main: #ffffff;
+  --text-muted: #a1a1aa;
+  --border-color: rgba(255, 255, 255, 0.05);
+  --bg-overlay: rgba(0, 0, 0, 0.8);
+}
+
+.light {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: rgba(0, 0, 0, 0.05);
+  --bg-overlay: rgba(255, 255, 255, 0.8);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+}
+
+.brand-text-gradient {
+  background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-shadow {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+}
