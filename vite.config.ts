@@ -11,8 +11,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Ensure smaller chunks to avoid module resolution issues
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     host: '0.0.0.0',
+  },
+  // Optimize: Use WASM fallback for Rollup if native binary is unavailable
+  define: {
+    'process.env.ROLLUP_NAPI_ONLY': JSON.stringify('false'),
   },
 });
