@@ -28,6 +28,7 @@
     "SUPABASE_ANON_KEY": "sb_publishable_-MJOrSAHP18_F-9Hu0EQXg_iS_PYe3W",
     "SUPABASE_SERVICE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNreXJjZGp5Y2hnbG1yZGdwZXZ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ4NDYxNywiZXhwIjoyMDkwMDYwNjE3fQ.7Nh5s2Nk-zJhVQZA4VWy0PT6l8yw2N5j1msYNGlSO00",
     "DATABASE_URL": "postgresql://postgres:wk7SkEP3XKyJUxcK@db.ckyrcdjychglmrdgpevx.supabase.co:5432/postgres",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NPM_CONFIG_OPTIONAL": "false"
   }
 }
