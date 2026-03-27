@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import serverless from "serverless-http";
 import { createClient } from '@supabase/supabase-js';
+import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
