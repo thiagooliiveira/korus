@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import { createServer as createViteServer } from "vite";
+import serverless from "serverless-http";
 import { createClient } from '@supabase/supabase-js';
 import path from "path";
 import { fileURLToPath } from "url";
@@ -291,9 +291,15 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  return app;
+}
+
+const app = await startServer();
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(Number(process.env.PORT) || 3000, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
   });
 }
 
-startServer();
+export default serverless(app);
