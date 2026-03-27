@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import serverless from "serverless-http";
 import { createClient } from '@supabase/supabase-js';
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
@@ -278,17 +277,28 @@ async function startServer() {
   // Será necessário migrar: Destinations, Plans, Forms, Passengers, Dependents, Tasks, etc.
   // Por enquanto, mantemos apenas rotas core migradas para Supabase.
 
-  // Vite middleware for development
+  // Vite middleware for development - ONLY import in development mode
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (err) {
+      console.error("Failed to initialize Vite in development mode:", err);
+      // Continue with static serving as fallback
+      app.use(express.static(path.join(__dirname, "dist")));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "dist", "index.html"));
+      });
+    }
   } else {
+    // Production: serve static files from dist
     app.use(express.static(path.join(__dirname, "dist")));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "Index.html"));
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
 
