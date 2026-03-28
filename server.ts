@@ -1,3 +1,32 @@
+  // Cadastro de clientes (signUp + insert extras)
+  app.post("/api/clients", async (req, res) => {
+    const { name, email, password, phone, agency_id } = req.body;
+    try {
+      // Cria usuário no Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      if (error || !data.user) {
+        return res.status(400).json({ error: error?.message || "Erro ao criar usuário" });
+      }
+      // Salva dados extras na tabela users
+      const { error: insertError } = await supabase.from('users').insert({
+        id: data.user.id,
+        email,
+        name,
+        phone,
+        agency_id,
+        role: 'client'
+      });
+      if (insertError) {
+        return res.status(400).json({ error: insertError.message });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 import "dotenv/config";
 import express from "express";
 import serverless from "serverless-http";
