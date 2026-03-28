@@ -121,7 +121,11 @@ async function startServer() {
         user: data.user
       });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      if (err instanceof Error) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.status(500).json({ error: String(err) });
+      }
     }
   });
 
@@ -323,7 +327,7 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-const handler = async (...args) => {
+const handler = async (...args: any[]) => {
   const app = await appPromise;
   return serverless(app)(...args);
 };
