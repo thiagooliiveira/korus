@@ -106,13 +106,21 @@ async function startServer() {
   app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
     try {
-      const { data: user, error } = await supabase.from('users').select('*').ilike('email', email).eq('password', password).single();
-      if (error || !user) {
+      // Usa o Supabase Auth para autenticação segura
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error || !data.session) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
-    } catch (err: any) {
+      // Retorna token de sessão e dados do usuário
+      res.json({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        user: data.user
+      });
+    } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
