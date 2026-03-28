@@ -304,12 +304,20 @@ async function startServer() {
   return app;
 }
 
-const app = await startServer();
+
+let appPromise = startServer();
 
 if (process.env.NODE_ENV !== "production") {
-  app.listen(Number(process.env.PORT) || 3000, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+  appPromise.then(app => {
+    app.listen(Number(process.env.PORT) || 3000, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+    });
   });
 }
 
-export default serverless(app);
+const handler = async (...args) => {
+  const app = await appPromise;
+  return serverless(app)(...args);
+};
+
+export default handler;
