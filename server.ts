@@ -4,29 +4,9 @@ import serverless from "serverless-http";
 import { createClient } from '@supabase/supabase-js';
 import path from "path";
 import { fileURLToPath } from "url";
-import multer from "multer";
-import fs from "fs";
+// multer e fs removidos para produção serverless
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage });
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -89,10 +69,29 @@ async function startServer() {
   });
 
   // API Routes
-  app.post("/api/upload-logo", upload.single("logo"), (req: any, res) => {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    const logoUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: logoUrl });
+
+  // Nova rota: upload direto para Supabase Storage
+  app.post("/api/upload-logo", express.json({limit: '10mb'}), async (req: any, res) => {
+    try {
+      // Espera receber { file: base64, filename: string, mimetype: string }
+      const { file, filename, mimetype } = req.body;
+      if (!file || !filename || !mimetype) {
+        return res.status(400).json({ error: "Missing file, filename or mimetype" });
+      }
+      // Decodifica base64
+      const buffer = Buffer.from(file, 'base64');
+      // Upload para Supabase Storage (bucket: 'logos')
+      const { data, error } = await supabase.storage.from('logos').upload(filename, buffer, {
+        contentType: mimetype,
+        upsert: true
+      });
+      if (error) return res.status(500).json({ error: error.message });
+      // Gera URL pública
+      const { data: publicUrl } = supabase.storage.from('logos').getPublicUrl(filename);
+      res.json({ url: publicUrl.publicUrl });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.get("/api/test-db", async (req, res) => {
