@@ -52,14 +52,13 @@ async function isFinanceModuleEnabledForAgency(agencyId?: number | string | null
 }
 
 async function startServer() {
+
   const app = express();
-  const PORT = Number(process.env.PORT);
-  if (!PORT) {
-    throw new Error("PORT environment variable is required");
-  }
+  const PORT = Number(process.env.PORT) || 3000;
+
 
   app.use(express.json());
-  app.use("/uploads", express.static(uploadsDir));
+  // app.use("/uploads", express.static(uploadsDir)); // removido: uploads não usados mais
 
   app.use((req, _res, next) => {
     if (req.url.startsWith('/xapi/')) {
@@ -305,6 +304,7 @@ async function startServer() {
 }
 
 const app = await startServer();
+
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(Number(process.env.PORT) || 3000, "0.0.0.0", () => {
