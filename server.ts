@@ -1,13 +1,18 @@
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.join(__dirname, '.env.local') });
+
 import express from "express";
 import serverless from "serverless-http";
 import { createClient } from '@supabase/supabase-js';
-import path from "path";
-import { fileURLToPath } from "url";
 // multer e fs removidos para produção serverless
-
-
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -53,46 +58,17 @@ async function isFinanceModuleEnabledForAgency(agencyId?: number | string | null
 }
 
 async function startServer() {
-    // Cadastro de clientes (signUp + insert extras)
-    app.post("/api/clients", async (req, res) => {
-      const { name, email, password, phone, agency_id } = req.body;
-      try {
-        // Cria usuário no Supabase Auth
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password
-        });
-        if (error || !data.user) {
-          return res.status(400).json({ error: error?.message || "Erro ao criar usuário" });
-        }
-        // Salva dados extras na tabela users
-        const { error: insertError } = await supabase.from('users').insert({
-          id: data.user.id,
-          email,
-          name,
-          phone,
-          agency_id,
-          role: 'client'
-        });
-        if (insertError) {
-          return res.status(400).json({ error: insertError.message });
-        }
-        res.json({ success: true });
-      } catch (err) {
-        res.status(500).json({ error: err.message });
-      }
-    });
-  const app = express();
-  const PORT = Number(process.env.PORT);
-  if (!PORT) {
-    throw new Error("PORT environment variable is required");
-  }
+    const app = express();
+    const PORT = Number(process.env.PORT);
+    if (!PORT) {
+      throw new Error("PORT environment variable is required");
+    }
 
-  app.use(express.json());
-  app.use("/uploads", express.static(uploadsDir));
+    app.use(express.json());
+    // app.use("/uploads", express.static(uploadsDir)); // Disabled for serverless
 
-  app.use((req, _res, next) => {
-    if (req.url.startsWith('/xapi/')) {
+    app.use((req, _res, next) => {
+      if (req.url.startsWith('/xapi/')) {
       req.url = req.url.replace('/xapi/', '/api/');
     }
     next();
@@ -137,19 +113,29 @@ async function startServer() {
   app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
     try {
-      // Usa o Supabase Auth para autenticação segura
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      if (error || !data.session) {
+      // Busca o usuário na tabela users
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('id, email, password, name, role, agency_id')
+        .eq('email', email)
+        .single();
+      
+      if (error || !user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      // Retorna token de sessão e dados do usuário
+      
+      // Valida a senha (comparação simples)
+      if (user.password !== password) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Retorna dados do usuário sem a senha
       res.json({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        user: data.user
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        agency_id: user.agency_id
       });
     } catch (err) {
       if (err instanceof Error) {
