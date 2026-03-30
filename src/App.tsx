@@ -1322,8 +1322,9 @@ export default function App() {
       }
     }
   }, [user, canAccessFinance]);
-      }
 
+  useEffect(() => {
+    if (user) {
       if (user.role === 'supervisor' || user.role === 'master') {
         fetchLeads();
         fetchClientResetHistory();
