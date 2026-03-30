@@ -634,11 +634,20 @@ export default function App() {
       if (res.ok) {
         const userData = await res.json();
         console.log('Login bem-sucedido:', userData);
+        
+        // Validar dados do usuário
+        if (!userData.id || !userData.role) {
+          console.error('Dados do usuário incompletos:', userData);
+          setError('Erro: dados do usuário incompletos');
+          return;
+        }
+        
         setUser(userData);
+        console.log('Usuário setado com sucesso, aguardando carregamento de dados...');
       } else {
         const errorData = await res.json();
         console.error('Erro no login:', errorData);
-        setError('Credenciais inválidas');
+        setError(errorData.error || 'Credenciais inválidas');
       }
     } catch (err) {
       console.error('Erro de conexão:', err);
@@ -647,17 +656,47 @@ export default function App() {
   };
 
   const fetchProcesses = async () => {
-    if (!user) return;
-    const res = await fetch(`/api/processes?agency_id=${user.agency_id || ''}&role=${user.role}&user_id=${user.id}`);
-    const data = await res.json();
-    setProcesses(data);
+    if (!user) {
+      console.warn('fetchProcesses: usuário não definido');
+      return;
+    }
+    try {
+      console.log('Carregando processes com:', { agency_id: user.agency_id, role: user.role, user_id: user.id });
+      const res = await fetch(`/api/processes?agency_id=${user.agency_id || ''}&role=${user.role}&user_id=${user.id}`);
+      if (!res.ok) {
+        console.error('Erro ao carregar processes:', res.status);
+        setProcesses([]);
+        return;
+      }
+      const data = await res.json();
+      console.log('Processes carregados:', data.length);
+      setProcesses(data);
+    } catch (err) {
+      console.error('Erro em fetchProcesses:', err);
+      setProcesses([]);
+    }
   };
 
   const fetchAgencies = async () => {
-    if (user?.role !== 'master') return;
-    const res = await fetch('/api/agencies');
-    const data = await res.json();
-    setAgencies(data);
+    if (user?.role !== 'master') {
+      console.warn('fetchAgencies: usuário não é master');
+      return;
+    }
+    try {
+      console.log('Carregando agencies...');
+      const res = await fetch('/api/agencies');
+      if (!res.ok) {
+        console.error('Erro ao carregar agencies:', res.status);
+        setAgencies([]);
+        return;
+      }
+      const data = await res.json();
+      console.log('Agencies carregadas:', data.length);
+      setAgencies(data);
+    } catch (err) {
+      console.error('Erro em fetchAgencies:', err);
+      setAgencies([]);
+    }
   };
 
   const fetchExpenses = async () => {
@@ -1256,19 +1295,33 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
-      fetchProcesses();
+      console.log('Usuário definido, carregando dados...', user);
+      
+      try {
+        fetchProcesses().catch(err => console.error('Erro ao carregar processes:', err));
 
-      if (user.role === 'master') {
-        fetchAgencies();
-        fetchAuditLogs();
-        fetchGlobalUsers();
+        if (user.role === 'master') {
+          fetchAgencies().catch(err => console.error('Erro ao carregar agencies:', err));
+          fetchAuditLogs().catch(err => console.error('Erro ao carregar audit logs:', err));
+          fetchGlobalUsers().catch(err => console.error('Erro ao carregar users:', err));
+        }
+
+        if (user.role !== 'master') {
+          fetchVisaTypes().catch(err => console.error('Erro ao carregar visa types:', err));
+        }
+
+        if (canAccessFinance) {
+          fetchExpenses().catch(err => console.error('Erro ao carregar expenses:', err));
+          fetchRevenues().catch(err => console.error('Erro ao carregar revenues:', err));
+        }
+
+        fetchPlans().catch(err => console.error('Erro ao carregar plans:', err));
+      } catch (err) {
+        console.error('Erro ao carregar dados após login:', err);
+        setError('Erro ao carregar dados. Atualize a página.');
       }
-
-      if (user.role !== 'master') fetchVisaTypes();
-
-      if (canAccessFinance) {
-        fetchExpenses();
-        fetchRevenues();
+    }
+  }, [user, canAccessFinance]);
       }
 
       if (user.role === 'supervisor' || user.role === 'master') {

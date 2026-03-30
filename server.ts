@@ -166,6 +166,46 @@ async function startServer() {
     }
   });
 
+  app.get("/api/processes", async (req, res) => {
+    try {
+      const { agency_id, role, user_id } = req.query;
+      console.log('GET /api/processes:', { agency_id, role, user_id });
+      
+      let query = supabase.from('processes').select('*');
+      
+      // Filtrar por role e agency_id
+      if (role === 'master') {
+        // Master vê todos os processes
+        query = query.order('created_at', { ascending: false });
+      } else if (role === 'consultant' || role === 'supervisor' || role === 'analyst') {
+        // Consultores veem processes da sua agência
+        if (agency_id) {
+          query = query.eq('agency_id', agency_id);
+        }
+        query = query.order('created_at', { ascending: false });
+      } else if (role === 'client') {
+        // Clientes veem apenas seus próprios processes
+        if (user_id) {
+          query = query.eq('client_id', user_id);
+        }
+        query = query.order('created_at', { ascending: false });
+      }
+      
+      const { data: processes, error } = await query;
+      
+      if (error) {
+        console.error('Erro ao buscar processes:', error);
+        return res.status(500).json({ error: error.message });
+      }
+      
+      console.log('Processes encontrados:', processes?.length || 0);
+      res.json(processes || []);
+    } catch (err: any) {
+      console.error('Erro em GET /api/processes:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // TODO: Implement /api/processes/start later
 
   app.get("/api/audit-logs", async (req, res) => {
