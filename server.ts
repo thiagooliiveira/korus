@@ -58,23 +58,11 @@ async function isFinanceModuleEnabledForAgency(agencyId?: number | string | null
 }
 
 async function startServer() {
-<<<<<<< HEAD
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
-
   app.use(express.json());
   // app.use("/uploads", express.static(uploadsDir)); // removido: uploads não usados mais
-=======
-    const app = express();
-    const PORT = Number(process.env.PORT);
-    if (!PORT) {
-      throw new Error("PORT environment variable is required");
-    }
-
-    app.use(express.json());
-    // app.use("/uploads", express.static(uploadsDir)); // Disabled for serverless
->>>>>>> Banco
 
     app.use((req, _res, next) => {
       if (req.url.startsWith('/xapi/')) {
@@ -393,7 +381,7 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-const handler = async (...args: any[]) => {
+const handler = async (...args: any) => {
   const app = await appPromise;
   return serverless(app)(...args);
 };

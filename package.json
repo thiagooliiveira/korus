@@ -44,6 +44,7 @@
     "dotenv": "^17.3.1",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.2.1",
+    "fdir": "^6.5.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
