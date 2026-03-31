@@ -61,6 +61,17 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
+  // Validação de credenciais Supabase no startup
+  console.log('\n🔐 VALIDAÇÃO DE CREDENCIAIS SUPABASE');
+  console.log('  URL:', process.env.SUPABASE_URL ? '✅ Configurada' : '❌ NÃO CONFIGURADA');
+  console.log('  SERVICE_KEY:', process.env.SUPABASE_SERVICE_KEY ? '✅ Configurada' : '❌ NÃO CONFIGURADA');
+  
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    console.error('\n⚠️  ERRO: Credenciais Supabase inválidas ou ausentes!');
+    console.error('   Edite o arquivo .env.local com suas credenciais Supabase.');
+    console.error('   Veja https://supabase.com/dashboard para obter essas credenciais.\n');
+  }
+
   app.use(express.json());
   // app.use("/uploads", express.static(uploadsDir)); // removido: uploads não usados mais
 
@@ -99,33 +110,51 @@ async function startServer() {
 
   app.get("/api/test-db", async (req, res) => {
     try {
+      console.log('[TEST-DB] Testando conexão Supabase...');
       const { data: users, error } = await supabase.from('users').select('email, role');
-      if (error) throw error;
+      if (error) {
+        console.error('[TEST-DB] ❌ Erro:', error.message);
+        throw error;
+      }
+      console.log('[TEST-DB] ✅ Conexão OK! Usuários encontrados:', users?.length || 0);
       res.json({ status: "ok", users });
     } catch (err: any) {
-      res.status(500).json({ status: "error", message: err.message });
+      console.error('[TEST-DB] ERRO DETALHADO:', err);
+      res.status(500).json({ status: "error", message: err.message, type: err.code || err.constructor.name });
     }
   });
 
   app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
+    console.log(`[LOGIN] Tentativa de login: ${email}`);
     try {
       // Busca o usuário na tabela users
+      console.log('[LOGIN] Consultando banco de dados...');
       const { data: user, error } = await supabase
         .from('users')
         .select('id, email, password, name, role, agency_id')
         .eq('email', email)
         .single();
       
-      if (error || !user) {
+      if (error) {
+        console.error('[LOGIN] ❌ Erro na query:', error.message);
+        return res.status(401).json({ error: "Invalid credentials", dbError: error.message });
+      }
+      
+      if (!user) {
+        console.warn('[LOGIN] Usuário não encontrado:', email);
         return res.status(401).json({ error: "Invalid credentials" });
       }
+      
+      console.log('[LOGIN] Usuário encontrado:', email);
       
       // Valida a senha (comparação simples)
       if (user.password !== password) {
+        console.warn('[LOGIN] ❌ Senha incorreta para:', email);
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
+      console.log('[LOGIN] ✅ Login bem-sucedido:', email);
       // Retorna dados do usuário sem a senha
       res.json({
         id: user.id,
@@ -135,8 +164,9 @@ async function startServer() {
         agency_id: user.agency_id
       });
     } catch (err) {
+      console.error('[LOGIN] ❌ ERRO CATASTRÓFICO:', err);
       if (err instanceof Error) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message, type: err.constructor.name });
       } else {
         res.status(500).json({ error: String(err) });
       }
