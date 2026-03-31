@@ -84,6 +84,37 @@ async function startServer() {
 
   // API Routes
 
+  // Health Check - teste de conectividade
+  app.get('/api/health', async (_req, res) => {
+    try {
+      // Testa conexão com Supabase
+      const { data, error } = await supabase.from('users').select('count', { count: 'exact' });
+      
+      if (error) {
+        return res.status(500).json({
+          status: 'ERROR',
+          database: 'disconnected',
+          error: error.message,
+        });
+      }
+
+      res.status(200).json({
+        status: 'OK',
+        database: 'connected',
+        timestamp: new Date().toISOString(),
+      });
+
+    } catch (error: any) {
+      console.error('[HEALTH] Erro:', error);
+
+      res.status(500).json({
+        status: 'ERROR',
+        database: 'disconnected',
+        error: error.message || 'Unknown error',
+      });
+    }
+  });
+
   // Nova rota: upload direto para Supabase Storage
   app.post("/api/upload-logo", express.json({limit: '10mb'}), async (req: any, res) => {
     try {
