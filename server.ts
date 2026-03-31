@@ -73,6 +73,33 @@ async function startServer() {
   }
 
   app.use(express.json());
+  
+  // CORS Configuration
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000'
+  ];
+
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin || '')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+    
+    next();
+  });
+
   // app.use("/uploads", express.static(uploadsDir)); // removido: uploads não usados mais
 
     app.use((req, _res, next) => {
@@ -158,6 +185,13 @@ async function startServer() {
   app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
     console.log(`[LOGIN] Tentativa de login: ${email}`);
+    
+    // Validação de entrada
+    if (!email || !password) {
+      console.warn('[LOGIN] ⚠️  Email ou senha ausentes');
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
     try {
       // Busca o usuário na tabela users
       console.log('[LOGIN] Consultando banco de dados...');
@@ -165,27 +199,27 @@ async function startServer() {
         .from('users')
         .select('id, email, password, name, role, agency_id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('[LOGIN] ❌ Erro na query:', error.message);
-        return res.status(401).json({ error: "Invalid credentials", dbError: error.message });
+        return res.status(500).json({ error: "Database error", dbError: error.message });
       }
       
       if (!user) {
         console.warn('[LOGIN] Usuário não encontrado:', email);
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Invalid email or password" });
       }
       
-      console.log('[LOGIN] Usuário encontrado:', email);
+      console.log('[LOGIN] ✅ Usuário encontrado:', email, `(ID: ${user.id})`);
       
       // Valida a senha (comparação simples)
       if (user.password !== password) {
         console.warn('[LOGIN] ❌ Senha incorreta para:', email);
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Invalid email or password" });
       }
       
-      console.log('[LOGIN] ✅ Login bem-sucedido:', email);
+      console.log('[LOGIN] ✅ Login bem-sucedido:', email, `(${user.role})`);
       // Retorna dados do usuário sem a senha
       res.json({
         id: user.id,
@@ -199,7 +233,7 @@ async function startServer() {
       if (err instanceof Error) {
         res.status(500).json({ error: err.message, type: err.constructor.name });
       } else {
-        res.status(500).json({ error: String(err) });
+        res.status(500).json({ error: "Unknown error occurred" });
       }
     }
   });
