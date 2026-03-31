@@ -169,4 +169,4 @@ runTests().catch(error => {
 });
 
 // Exportar para uso em outros módulos
-module.exports = { fetchAPI, printStatus, printInfo, printSection };
+export { fetchAPI, printStatus, printInfo, printSection };
