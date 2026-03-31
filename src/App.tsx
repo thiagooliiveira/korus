@@ -39,6 +39,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { User, Process, Agency, Message, Document, VisaType, Financial, FormResponse, AuditLog, Expense, Revenue, Task, UserRole, Form, Destination, Plan, FormField } from './types';
 import { ClientJourneyFlow } from './features/clientJourney/ClientJourneyFlow';
 
+// API Configuration
+const getApiUrl = () => import.meta.env.VITE_API_URL || '/api';
+const API_URL = getApiUrl();
+
 // Korus Logo Component
 const KorusLogo = ({ size = 40, className = "" }: { size?: number, className?: string }) => (
   <div className={`relative flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
@@ -626,7 +630,10 @@ export default function App() {
     setError('');
     console.log('Tentando login com:', loginForm.email);
     try {
-      const res = await fetch('/api/login', {
+      const loginUrl = `${API_URL}/login`;
+      console.log('URL de login:', loginUrl);
+      
+      const res = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm),
